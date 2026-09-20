@@ -1,0 +1,5 @@
+app:
+  features:
+    discount:
+      enabled: false
+      percentage: 0
