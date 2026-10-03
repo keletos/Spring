@@ -1,5 +1,0 @@
-app:
-  features:
-    discount:
-      enabled: true
-      percentage: 10

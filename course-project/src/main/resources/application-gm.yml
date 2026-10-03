@@ -1,0 +1,11 @@
+server:
+  port: 8080
+
+logging:
+  level:
+    org.springframework.web: DEBUG
+    kz.kbtu: DEBUG
+
+game:
+  mode: "MASTER"
+  startingEddies: 100000

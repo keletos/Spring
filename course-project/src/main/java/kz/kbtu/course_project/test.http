@@ -1,0 +1,18 @@
+### 1. Создаем нового Киберпанка (Соло)
+POST http://localhost:8081/api/v1/characters
+Content-Type: application/json
+
+{
+  "name": "Morgan Blackhand",
+  "role": "Solo",
+  "intelligence": 9,
+  "reflex": 9,
+  "dexterity": 8,
+  "technology": 6,
+  "cool": 8,
+  "will": 7,
+  "movement": 6,
+  "body": 7,
+  "empathy": 5,
+  "luck": 6
+}

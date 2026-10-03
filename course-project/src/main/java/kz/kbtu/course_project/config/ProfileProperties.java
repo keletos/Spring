@@ -5,9 +5,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
 @Validated
-@ConfigurationProperties(prefix = "app.features.discount")
-public record DiscountProperties(
-    boolean enabled,
-    @Min(0) int percentage
+@ConfigurationProperties(prefix = "game")
+public record ProfileProperties(
+    String mode,
+    @Min(0) int startingEddies
 ) {}
 
