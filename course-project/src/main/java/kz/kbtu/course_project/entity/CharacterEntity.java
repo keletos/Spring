@@ -1,24 +1,42 @@
-package kz.kbtu.course_project.model;
+package kz.kbtu.course_project.entity;
 
+import jakarta.persistence.*;
 import java.util.UUID;
 
-public class Character {
+@Entity
+@Table(name = "cyberpunk_character")
+public class CharacterEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
+
+    @Column(nullable = false)
     private String name;
+
+    @Column(nullable = false)
     private String role;
 
-    //Stats
+    // Stats
     private int level;
     private int eddies;
 
+    @Column(name = "max_health")
     private int maxHealth;
+
+    @Column(name = "max_humanity")
     private int maxHumanity;
 
+    @Column(name = "current_health")
     private int currentHealth;
+
+    @Column(name = "current_humanity")
     private int currentHumanity;
+
+    @Column(name = "current_luck_points")
     private int currentLuckPoints;
 
-    //Characteristics
+    // Characteristics
     private int intelligence;
     private int reflex;
     private int dexterity;
@@ -30,16 +48,18 @@ public class Character {
     private int empathy;
     private int luck;
 
-     public Character(
-        UUID id, String name, String role, 
-        int eddies, 
-        int intelligence, int reflex, int dexterity, int technology, int cool, int will, int movement, int body, int empathy, int luck) {
-        this.id = id;
+    @Version
+    private long version;
+
+    protected CharacterEntity() {}
+
+    public CharacterEntity(
+        String name, String role, int eddies, int intelligence, int reflex, 
+        int dexterity, int technology, int cool, int will, int movement, 
+        int body, int empathy, int luck) {
         this.name = name;
         this.role = role;
-
         this.eddies = eddies;
-
         this.intelligence = intelligence;
         this.reflex = reflex;
         this.dexterity = dexterity;

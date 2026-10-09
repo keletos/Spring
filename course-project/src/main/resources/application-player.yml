@@ -1,10 +1,35 @@
 server:
   port: 8081
 
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/Spring_CP_RED
+    username: postgres
+    password: ${DB_PASSWORD}
+    hikari:
+      pool-name: cyberpunk-pool
+      maximum-pool-size: 10
+      connection-timeout: 3000        # Тайм-аут ожидания по лекции (3 секунды)
+      max-lifetime: 1800000           # Время жизни соединения (30 минут)
+
+  jpa:
+    open-in-view: false               # Критично! Выключаем по требованию лектора (слайд 22)
+    hibernate:
+      ddl-auto: validate                # Поставьте 'update' ОДИН РАЗ, чтобы создались таблицы. 
+                                      # После создания верните на 'validate' (слайд 29).
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
 logging:
   level:
     org.springframework.web: INFO
     kz.kbtu: INFO
+    # ДОБАВЛЯЕМ ЭТОТ БЛОК (Debug Kit из слайда 28): Чтобы видеть транзакции и SQL в консоли
+    org.hibernate.SQL: debug
+    org.hibernate.orm.jdbc.bind: trace
+    org.springframework.orm.jpa: debug
+    com.zaxxer.hikari: debug
 
 game:
   mode: "PLAYER"
