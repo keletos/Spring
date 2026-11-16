@@ -1,4 +1,4 @@
-package kz.kbtu.course_project.dto;
+package kz.kbtu.course_project.web.dto;
 
 import java.util.UUID;
 

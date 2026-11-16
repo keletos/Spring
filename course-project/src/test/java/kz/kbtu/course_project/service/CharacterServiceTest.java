@@ -1,10 +1,11 @@
 
 package kz.kbtu.course_project.service;
 
-import kz.kbtu.course_project.dto.CharacterResponse;
-import kz.kbtu.course_project.dto.CreateCharacterRequest;
-import kz.kbtu.course_project.entity.CharacterEntity;
-import kz.kbtu.course_project.repository.CharacterRepository;
+import kz.kbtu.course_project.app.service.CharacterService;
+import kz.kbtu.course_project.web.dto.CharacterResponse;
+import kz.kbtu.course_project.web.dto.CreateCharacterRequest;
+import kz.kbtu.course_project.web.dto.UpdateCharacterRequest;
+import kz.kbtu.course_project.web.mapper.CharacterDtoMapper;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,6 +13,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -19,8 +21,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import kz.kbtu.course_project.dto.UpdateCharacterRequest;
 import kz.kbtu.course_project.exception.CharacterNotFoundException;
+import kz.kbtu.course_project.infra.persistence.entity.CharacterEntity;
+import kz.kbtu.course_project.infra.persistence.mapper.CharacterPersistenceMapper;
+import kz.kbtu.course_project.infra.persistence.repository.CharacterRepository;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -42,6 +46,11 @@ class CharacterServiceTest {
     @InjectMocks
     private CharacterService characterService;
 
+    @Spy
+    private CharacterPersistenceMapper persistenceMapper = new CharacterPersistenceMapper();
+
+    @Spy
+    private CharacterDtoMapper dtoMapper = new CharacterDtoMapper();
     /*
         TEST 1 - Creating a character
     */

@@ -1,10 +1,11 @@
-package kz.kbtu.course_project.controller;
+package kz.kbtu.course_project.web.controller;
 
 import jakarta.validation.Valid;
-import kz.kbtu.course_project.dto.CreateCharacterRequest;
-import kz.kbtu.course_project.dto.UpdateCharacterRequest;
-import kz.kbtu.course_project.dto.CharacterResponse;
-import kz.kbtu.course_project.service.CharacterService;
+import kz.kbtu.course_project.app.service.CharacterService;
+import kz.kbtu.course_project.web.dto.CharacterResponse;
+import kz.kbtu.course_project.web.dto.CreateCharacterRequest;
+import kz.kbtu.course_project.web.dto.UpdateCharacterRequest;
+
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.data.web.PagedModel;

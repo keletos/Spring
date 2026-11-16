@@ -1,42 +1,24 @@
-package kz.kbtu.course_project.entity;
+package kz.kbtu.course_project.domain;
 
-import jakarta.persistence.*;
 import java.util.UUID;
 
-@Entity
-@Table(name = "cyberpunk_character")
-public class CharacterEntity {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+public class Character {
     private UUID id;
-
-    @Column(nullable = false)
     private String name;
-
-    @Column(nullable = false)
     private String role;
 
-    // Stats
-    private int level = 1;
+    //Stats
+    private int level;
     private int eddies;
 
-    @Column(name = "max_health")
     private int maxHealth;
-
-    @Column(name = "max_humanity")
     private int maxHumanity;
 
-    @Column(name = "current_health")
     private int currentHealth;
-
-    @Column(name = "current_humanity")
     private int currentHumanity;
-
-    @Column(name = "current_luck_points")
     private int currentLuckPoints;
 
-    // Characteristics
+    //Characteristics
     private int intelligence;
     private int reflex;
     private int dexterity;
@@ -48,18 +30,16 @@ public class CharacterEntity {
     private int empathy;
     private int luck;
 
-    @Version
-    private long version;
-
-    protected CharacterEntity() {}
-
-    public CharacterEntity(
-        String name, String role, int eddies, int intelligence, int reflex, 
-        int dexterity, int technology, int cool, int will, int movement, 
-        int body, int empathy, int luck) {
+     public Character(
+        UUID id, String name, String role, 
+        int eddies, 
+        int intelligence, int reflex, int dexterity, int technology, int cool, int will, int movement, int body, int empathy, int luck) {
+        this.id = id;
         this.name = name;
         this.role = role;
+
         this.eddies = eddies;
+
         this.intelligence = intelligence;
         this.reflex = reflex;
         this.dexterity = dexterity;
@@ -120,15 +100,60 @@ public class CharacterEntity {
     public int getEmpathy() { return empathy; }
     public int getLuck() { return luck; }
 
-    //Characteristics setters
-    public void setIntelligence(int intelligence) { this.intelligence = intelligence; }
-    public void setReflex(int reflex) { this.reflex = reflex; }
-    public void setDexterity(int dexterity) { this.dexterity = dexterity; }
-    public void setTechnology(int technology) { this.technology = technology; }
-    public void setCool(int cool) { this.cool = cool; }
-    public void setWill(int will) { this.will = will; }
-    public void setMovement(int movement) { this.movement = movement; }
-    public void setBody(int body) { this.body = body; }
-    public void setEmpathy(int empathy) { this.empathy = empathy; }
-    public void setLuck(int luck) { this.luck = luck; }
+
+
+
+    public void initializeStats() {
+        this.maxHealth = calculateMaxHealth();
+        this.currentHealth = this.maxHealth;
+
+        this.maxHumanity = calculateMaxHumanity();
+        this.currentHumanity = this.maxHumanity;
+
+        this.currentLuckPoints = this.luck;
+    }
+
+    public void updateCharacteristics(
+            int intelligence,
+            int reflex,
+            int dexterity,
+            int technology,
+            int cool,
+            int will,
+            int movement,
+            int body,
+            int empathy,
+            int luck
+    ) {
+        this.intelligence = intelligence;
+        this.reflex = reflex;
+        this.dexterity = dexterity;
+        this.technology = technology;
+        this.cool = cool;
+        this.will = will;
+        this.movement = movement;
+        this.body = body;
+        this.empathy = empathy;
+        this.luck = luck;
+
+        recalculateStats();
+    }
+
+    // Recalculate derived stats after characteristics change
+    public void recalculateStats() {
+        this.maxHealth = calculateMaxHealth();
+        this.maxHumanity = calculateMaxHumanity();
+
+        this.currentHealth = Math.min(this.currentHealth, this.maxHealth);
+        this.currentHumanity = Math.min(this.currentHumanity, this.maxHumanity);
+        this.currentLuckPoints = Math.min(this.currentLuckPoints, this.luck);
+    }
+
+    private int calculateMaxHealth() {
+        return 10 + (5 * (int) Math.ceil((this.body + this.will) / 2.0));
+    }
+
+    private int calculateMaxHumanity() {
+        return this.empathy * 10;
+    }
 }

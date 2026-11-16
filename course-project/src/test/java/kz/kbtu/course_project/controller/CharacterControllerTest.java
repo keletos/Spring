@@ -1,9 +1,9 @@
 package kz.kbtu.course_project.controller;
 
-import kz.kbtu.course_project.dto.CharacterResponse;
-import kz.kbtu.course_project.dto.CreateCharacterRequest;
-import kz.kbtu.course_project.dto.UpdateCharacterRequest;
-import kz.kbtu.course_project.service.CharacterService;
+import kz.kbtu.course_project.web.controller.CharacterController;
+import kz.kbtu.course_project.web.dto.CharacterResponse;
+import kz.kbtu.course_project.web.dto.CreateCharacterRequest;
+import kz.kbtu.course_project.web.dto.UpdateCharacterRequest;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,8 +37,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.mockito.Mockito.never;
 
 import kz.kbtu.course_project.exception.CharacterNotFoundException;
-
-import kz.kbtu.course_project.entity.CharacterEntity;
+import kz.kbtu.course_project.infra.persistence.entity.CharacterEntity;
+import kz.kbtu.course_project.app.service.CharacterService;
 
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 

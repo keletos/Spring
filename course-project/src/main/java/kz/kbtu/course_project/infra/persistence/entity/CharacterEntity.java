@@ -1,24 +1,42 @@
-package kz.kbtu.course_project.model;
+package kz.kbtu.course_project.infra.persistence.entity;
 
+import jakarta.persistence.*;
 import java.util.UUID;
 
-public class Character {
+@Entity
+@Table(name = "cyberpunk_character")
+public class CharacterEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
+
+    @Column(nullable = false)
     private String name;
+
+    @Column(nullable = false)
     private String role;
 
-    //Stats
-    private int level;
+    // Stats
+    private int level = 1;
     private int eddies;
 
+    @Column(name = "max_health")
     private int maxHealth;
+
+    @Column(name = "max_humanity")
     private int maxHumanity;
 
+    @Column(name = "current_health")
     private int currentHealth;
+
+    @Column(name = "current_humanity")
     private int currentHumanity;
+
+    @Column(name = "current_luck_points")
     private int currentLuckPoints;
 
-    //Characteristics
+    // Characteristics
     private int intelligence;
     private int reflex;
     private int dexterity;
@@ -30,16 +48,18 @@ public class Character {
     private int empathy;
     private int luck;
 
-     public Character(
-        UUID id, String name, String role, 
-        int eddies, 
-        int intelligence, int reflex, int dexterity, int technology, int cool, int will, int movement, int body, int empathy, int luck) {
-        this.id = id;
+    @Version
+    private long version;
+
+    protected CharacterEntity() {}
+
+    public CharacterEntity(
+        String name, String role, int eddies, int intelligence, int reflex, 
+        int dexterity, int technology, int cool, int will, int movement, 
+        int body, int empathy, int luck) {
         this.name = name;
         this.role = role;
-
         this.eddies = eddies;
-
         this.intelligence = intelligence;
         this.reflex = reflex;
         this.dexterity = dexterity;
@@ -99,4 +119,16 @@ public class Character {
     public int getBody() { return body; }
     public int getEmpathy() { return empathy; }
     public int getLuck() { return luck; }
+
+    //Characteristics setters
+    public void setIntelligence(int intelligence) { this.intelligence = intelligence; }
+    public void setReflex(int reflex) { this.reflex = reflex; }
+    public void setDexterity(int dexterity) { this.dexterity = dexterity; }
+    public void setTechnology(int technology) { this.technology = technology; }
+    public void setCool(int cool) { this.cool = cool; }
+    public void setWill(int will) { this.will = will; }
+    public void setMovement(int movement) { this.movement = movement; }
+    public void setBody(int body) { this.body = body; }
+    public void setEmpathy(int empathy) { this.empathy = empathy; }
+    public void setLuck(int luck) { this.luck = luck; }
 }

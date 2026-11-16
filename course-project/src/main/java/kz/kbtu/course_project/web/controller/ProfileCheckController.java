@@ -1,4 +1,4 @@
-package kz.kbtu.course_project.controller;
+package kz.kbtu.course_project.web.controller;
 
 import kz.kbtu.course_project.config.ProfileProperties;
 import org.springframework.web.bind.annotation.GetMapping;
