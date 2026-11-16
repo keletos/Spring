@@ -25,6 +25,5 @@ CREATE TABLE cyberpunk_character (
     empathy          INT NOT NULL,
     luck             INT NOT NULL,
     
-    -- Обязательное поле для контроля конкурентности
     version          BIGINT NOT NULL DEFAULT 0
 );

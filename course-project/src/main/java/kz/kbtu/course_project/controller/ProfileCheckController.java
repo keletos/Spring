@@ -15,8 +15,7 @@ public class ProfileCheckController {
 
     @GetMapping("/profile")
     public String checkDiscount() {
-        return "Текущий профиль - " + profileProperties.mode() 
-                + ", Начальные деньги = " + profileProperties.startingEddies();
+        return "Текущий профиль - " + profileProperties.mode();
     }
 }
 

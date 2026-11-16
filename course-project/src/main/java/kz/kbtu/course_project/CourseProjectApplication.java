@@ -12,3 +12,6 @@ public class CourseProjectApplication {
         SpringApplication.run(CourseProjectApplication.class, args);
     }
 }
+
+// $env:DB_PASSWORD = "POSTGRES_PASSWORD"
+// .\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles={profile name}"

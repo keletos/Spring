@@ -18,7 +18,7 @@ public class CharacterEntity {
     private String role;
 
     // Stats
-    private int level;
+    private int level = 1;
     private int eddies;
 
     @Column(name = "max_health")
@@ -119,4 +119,16 @@ public class CharacterEntity {
     public int getBody() { return body; }
     public int getEmpathy() { return empathy; }
     public int getLuck() { return luck; }
+
+    //Characteristics setters
+    public void setIntelligence(int intelligence) { this.intelligence = intelligence; }
+    public void setReflex(int reflex) { this.reflex = reflex; }
+    public void setDexterity(int dexterity) { this.dexterity = dexterity; }
+    public void setTechnology(int technology) { this.technology = technology; }
+    public void setCool(int cool) { this.cool = cool; }
+    public void setWill(int will) { this.will = will; }
+    public void setMovement(int movement) { this.movement = movement; }
+    public void setBody(int body) { this.body = body; }
+    public void setEmpathy(int empathy) { this.empathy = empathy; }
+    public void setLuck(int luck) { this.luck = luck; }
 }

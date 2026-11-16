@@ -9,23 +9,26 @@ spring:
     hikari:
       pool-name: cyberpunk-pool
       maximum-pool-size: 10
-      connection-timeout: 3000        # Тайм-аут ожидания по лекции (3 секунды)
-      max-lifetime: 1800000           # Время жизни соединения (30 минут)
+      connection-timeout: 3000
+      max-lifetime: 1800000
 
   jpa:
-    open-in-view: false               # Критично! Выключаем по требованию лектора (слайд 22)
+    open-in-view: false
     hibernate:
-      ddl-auto: validate                # Поставьте 'update' ОДИН РАЗ, чтобы создались таблицы. 
-                                      # После создания верните на 'validate' (слайд 29).
+      ddl-auto: validate 
+
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+  
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
 
-logging:
+logging:  
   level:
     org.springframework.web: INFO
     kz.kbtu: INFO
-    # ДОБАВЛЯЕМ ЭТОТ БЛОК (Debug Kit из слайда 28): Чтобы видеть транзакции и SQL в консоли
     org.hibernate.SQL: debug
     org.hibernate.orm.jdbc.bind: trace
     org.springframework.orm.jpa: debug
@@ -33,4 +36,3 @@ logging:
 
 game:
   mode: "PLAYER"
-  startingEddies: 2550

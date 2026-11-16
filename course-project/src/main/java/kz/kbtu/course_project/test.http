@@ -16,3 +16,108 @@ Content-Type: application/json
   "empathy": 5,
   "luck": 6
 }
+
+### Create a character
+POST http://localhost:8080/api/v1/characters
+Content-Type: application/json
+
+{
+  "name": "V",
+  "role": "Solo",
+  "intelligence": 6,
+  "reflex": 8,
+  "dexterity": 7,
+  "technology": 5,
+  "cool": 6,
+  "will": 5,
+  "movement": 7,
+  "body": 6,
+  "empathy": 4,
+  "luck": 5
+}
+
+
+### Get the created character (paste correct UUID from the response of the previous requests)
+GET http://localhost:8080/api/v1/characters/db245f3f-1487-46af-bfc6-7f7941f55b87
+Accept: application/json
+
+### Get all characters
+GET http://localhost:8080/api/v1/characters
+Accept: application/json
+
+### Get first page, 5 characters
+GET http://localhost:8080/api/v1/characters?page=0&size=5
+
+### Sort by name descending
+GET http://localhost:8080/api/v1/characters?page=0&size=5&sort=name,desc
+
+### Bad cases
+
+### Invalid character: wrong UUID format
+GET http://localhost:8080/api/v1/characters/not-a-uuid
+
+### Invalid character: wrong UUID
+GET http://localhost:8080/api/v1/characters/00000000-0000-0000-0000-000000000001
+Accept: application/json
+
+### Invalid character: empty name
+POST http://localhost:8080/api/v1/characters
+Content-Type: application/json
+
+{
+  "name": "",
+  "role": "Solo",
+  "intelligence": 6,
+  "reflex": 8,
+  "dexterity": 7,
+  "technology": 5,
+  "cool": 6,
+  "will": 5,
+  "movement": 7,
+  "body": 6,
+  "empathy": 4,
+  "luck": 5
+}
+
+### Invalid character: intelligence above maximum
+POST http://localhost:8080/api/v1/characters
+Content-Type: application/json
+
+{
+  "name": "Invalid V",
+  "role": "Solo",
+  "intelligence": 15,
+  "reflex": 8,
+  "dexterity": 7,
+  "technology": 5,
+  "cool": 6,
+  "will": 5,
+  "movement": 7,
+  "body": 6,
+  "empathy": 4,
+  "luck": 5
+}
+
+### Update character (paste correct UUID from the response of the previous requests)
+PUT http://localhost:8080/api/v1/characters/db245f3f-1487-46af-bfc6-7f7941f55b87
+Content-Type: application/json
+Accept: application/json
+
+{
+    "name": "Updated V",
+    "role": "Solo",
+    "eddies": 1000,
+    "intelligence": 6,
+    "reflex": 8,
+    "dexterity": 7,
+    "technology": 5,
+    "cool": 6,
+    "will": 8,
+    "movement": 7,
+    "body": 8,
+    "empathy": 5,
+    "luck": 4
+}
+
+### Delete character
+DELETE http://localhost:8080/api/v1/characters/db245f3f-1487-46af-bfc6-7f7941f55b87

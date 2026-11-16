@@ -2,6 +2,7 @@ package kz.kbtu.course_project.controller;
 
 import jakarta.validation.Valid;
 import kz.kbtu.course_project.dto.CreateCharacterRequest;
+import kz.kbtu.course_project.dto.UpdateCharacterRequest;
 import kz.kbtu.course_project.dto.CharacterResponse;
 import kz.kbtu.course_project.service.CharacterService;
 import org.springframework.data.domain.Pageable;
@@ -47,5 +48,24 @@ public class CharacterController {
             @PageableDefault(size = 20, sort = "name") Pageable pageable) {
         
         return new PagedModel<>(characterService.getAllCharacters(pageable));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<CharacterResponse> update(
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdateCharacterRequest request) {
+
+        CharacterResponse response =
+                characterService.updateCharacter(id, request);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
+
+        characterService.deleteCharacter(id);
+
+        return ResponseEntity.noContent().build();
     }
 }
