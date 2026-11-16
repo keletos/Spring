@@ -2,10 +2,11 @@
 package kz.kbtu.course_project.service;
 
 import kz.kbtu.course_project.app.service.CharacterService;
-import kz.kbtu.course_project.web.dto.CharacterResponse;
-import kz.kbtu.course_project.web.dto.CreateCharacterRequest;
-import kz.kbtu.course_project.web.dto.UpdateCharacterRequest;
-import kz.kbtu.course_project.web.mapper.CharacterDtoMapper;
+import kz.kbtu.course_project.domain.Character;
+import kz.kbtu.course_project.exception.CharacterNotFoundException;
+import kz.kbtu.course_project.infra.persistence.entity.CharacterEntity;
+import kz.kbtu.course_project.infra.persistence.mapper.CharacterPersistenceMapper;
+import kz.kbtu.course_project.infra.persistence.repository.CharacterRepository;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,26 +17,18 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
-import kz.kbtu.course_project.exception.CharacterNotFoundException;
-import kz.kbtu.course_project.infra.persistence.entity.CharacterEntity;
-import kz.kbtu.course_project.infra.persistence.mapper.CharacterPersistenceMapper;
-import kz.kbtu.course_project.infra.persistence.repository.CharacterRepository;
-
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import java.util.List;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class CharacterServiceTest {
@@ -43,49 +36,45 @@ class CharacterServiceTest {
     @Mock
     private CharacterRepository characterRepository;
 
+    @Spy
+    private CharacterPersistenceMapper persistenceMapper =
+            new CharacterPersistenceMapper();
+
     @InjectMocks
     private CharacterService characterService;
 
-    @Spy
-    private CharacterPersistenceMapper persistenceMapper = new CharacterPersistenceMapper();
-
-    @Spy
-    private CharacterDtoMapper dtoMapper = new CharacterDtoMapper();
     /*
         TEST 1 - Creating a character
     */
     @Test
     void createCharacter_shouldInitializeCharacterCorrectly() {
 
-        // Arrange: prepare request data
-        CreateCharacterRequest request = new CreateCharacterRequest(
-                "V", "Solo",
+        // Arrange
+        Character character = new Character(
+                null, "V", "Solo", 2550,
                 6, 8, 7, 5, 6,
                 5, 7, 6, 4, 5
         );
 
-        // Simulate repository save operation
         when(characterRepository.save(any(CharacterEntity.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        // Act: execute the service method
-        CharacterResponse response = characterService.createCharacter(request);
+        // Act
+        Character result = characterService.createCharacter(character);
 
-        // Assert: verify returned values
-        assertEquals("V", response.name());
-        assertEquals("Solo", response.role());
+        // Assert
+        assertEquals("V", result.getName());
+        assertEquals("Solo", result.getRole());
+        assertEquals(2550, result.getEddies());
 
-        assertEquals(2550, response.eddies());
+        assertEquals(40, result.getMaxHitPoints());
+        assertEquals(40, result.getCurrentHitPoints());
 
-        assertEquals(40, response.maxHealth());
-        assertEquals(40, response.currentHealth());
+        assertEquals(40, result.getMaxHumanity());
+        assertEquals(40, result.getCurrentHumanity());
 
-        assertEquals(40, response.maxHumanity());
-        assertEquals(40, response.currentHumanity());
+        assertEquals(5, result.getCurrentLuckPoints());
 
-        assertEquals(5, response.currentLuckPoints());
-
-        // Verify that repository.save() was called
         ArgumentCaptor<CharacterEntity> captor =
                 ArgumentCaptor.forClass(CharacterEntity.class);
 
@@ -99,7 +88,7 @@ class CharacterServiceTest {
     }
 
     /*
-        TEST 2.1 - Getting a non existing character
+        TEST 2.1 - Getting a non-existing character
     */
     @Test
     void getCharacter_shouldThrowExceptionWhenCharacterDoesNotExist() {
@@ -123,43 +112,42 @@ class CharacterServiceTest {
         TEST 2.2 - Getting all characters
     */
     @Test
-    void getAllCharacters_shouldReturnPagedCharacterResponses() {
+    void getAllCharacters_shouldReturnPagedCharacters() {
 
         // Arrange
-        CharacterEntity character = new CharacterEntity(
+        CharacterEntity entity = new CharacterEntity(
                 "V", "Solo", 500,
                 6, 8, 7, 5, 6,
                 5, 7, 6, 4, 5
         );
 
-        character.setMaxHitPoints(40);
-        character.setCurrentHitPoints(40);
-        character.setMaxHumanity(40);
-        character.setCurrentHumanity(40);
-        character.setCurrentLuckPoints(5);
+        entity.setMaxHitPoints(40);
+        entity.setCurrentHitPoints(40);
+        entity.setMaxHumanity(40);
+        entity.setCurrentHumanity(40);
+        entity.setCurrentLuckPoints(5);
 
         Pageable pageable = PageRequest.of(0, 20);
 
-        Page<CharacterEntity> characterPage =
-                new PageImpl<>(List.of(character), pageable, 1);
+        Page<CharacterEntity> entityPage =
+                new PageImpl<>(List.of(entity), pageable, 1);
 
         when(characterRepository.findAll(pageable))
-                .thenReturn(characterPage);
+                .thenReturn(entityPage);
 
         // Act
-        Page<CharacterResponse> result =
+        Page<Character> result =
                 characterService.getAllCharacters(pageable);
 
         // Assert
         assertEquals(1, result.getTotalElements());
         assertEquals(1, result.getContent().size());
 
-        assertEquals("V", result.getContent().get(0).name());
-        assertEquals("Solo", result.getContent().get(0).role());
+        assertEquals("V", result.getContent().get(0).getName());
+        assertEquals("Solo", result.getContent().get(0).getRole());
 
         verify(characterRepository).findAll(pageable);
     }
-
 
     /*
         TEST 3 - Updating a character
@@ -176,7 +164,6 @@ class CharacterServiceTest {
                 5, 7, 6, 4, 5
         );
 
-        // Existing character's current values
         existing.setMaxHitPoints(40);
         existing.setCurrentHitPoints(35);
 
@@ -185,8 +172,8 @@ class CharacterServiceTest {
 
         existing.setCurrentLuckPoints(5);
 
-        UpdateCharacterRequest request = new UpdateCharacterRequest(
-                "V2", "Netrunner", 1000,
+        Character updatedCharacter = new Character(
+                null, "V2", "Netrunner", 1000,
                 6, 8, 7, 5, 6,
                 3, 7, 2, 2, 3
         );
@@ -195,24 +182,21 @@ class CharacterServiceTest {
                 .thenReturn(Optional.of(existing));
 
         // Act
-        CharacterResponse response =
-                characterService.updateCharacter(characterId, request);
+        Character result =
+                characterService.updateCharacter(characterId, updatedCharacter);
 
         // Assert
-        assertEquals("V2", response.name());
-        assertEquals("Netrunner", response.role());
-        assertEquals(1000, response.eddies());
+        assertEquals("V2", result.getName());
+        assertEquals("Netrunner", result.getRole());
+        assertEquals(1000, result.getEddies());
 
-        // New HP = 10 + 5 * ceil((2 + 3) / 2) = 25
-        assertEquals(25, response.maxHealth());
-        assertEquals(25, response.currentHealth());
+        assertEquals(25, result.getMaxHitPoints());
+        assertEquals(25, result.getCurrentHitPoints());
 
-        // New humanity = 2 * 10 = 20
-        assertEquals(20, response.maxHumanity());
-        assertEquals(20, response.currentHumanity());
+        assertEquals(20, result.getMaxHumanity());
+        assertEquals(20, result.getCurrentHumanity());
 
-        // New luck = 3
-        assertEquals(3, response.currentLuckPoints());
+        assertEquals(3, result.getCurrentLuckPoints());
 
         verify(characterRepository).findById(characterId);
     }

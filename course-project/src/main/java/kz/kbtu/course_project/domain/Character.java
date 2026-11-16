@@ -8,7 +8,7 @@ public class Character {
     private String role;
 
     //Stats
-    private int level;
+    private int level = 1;
     private int eddies;
 
     private int maxHealth;
@@ -79,7 +79,13 @@ public class Character {
     public void setRole(String role) { this.role = role; }
 
     public void setLevel(int level) { this.level = level; }
-    public void setEddies(int eddies) { this.eddies = eddies; }
+    public void setEddies(int eddies) {
+    if (eddies < 0) {
+        throw new IllegalArgumentException("Eddies cannot be negative");
+    }
+
+    this.eddies = eddies;
+    }
 
     public void setMaxHitPoints(int maxHealth) { this.maxHealth = maxHealth; }
     public void setMaxHumanity(int maxHumanity) { this.maxHumanity = maxHumanity; }
@@ -149,11 +155,32 @@ public class Character {
         this.currentLuckPoints = Math.min(this.currentLuckPoints, this.luck);
     }
 
+    public void updateEddies(int amount) {
+        if (amount > 0) 
+        {
+            earnEddies(amount);
+        } 
+        else if (amount < 0) 
+        {
+            spendEddies(amount == Integer.MIN_VALUE ? Integer.MAX_VALUE : -amount);
+        }
+    }
+
     private int calculateMaxHealth() {
         return 10 + (5 * (int) Math.ceil((this.body + this.will) / 2.0));
     }
 
     private int calculateMaxHumanity() {
         return this.empathy * 10;
+    }
+
+    private void earnEddies(int amount) 
+    {
+        this.eddies = Math.addExact(this.eddies, amount);
+    }
+
+    private void spendEddies(int amount) 
+    {
+        this.eddies = Math.max(0, this.eddies - amount);
     }
 }

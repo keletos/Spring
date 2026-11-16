@@ -1,51 +1,41 @@
+
 package kz.kbtu.course_project.controller;
 
+import kz.kbtu.course_project.app.service.CharacterService;
+import kz.kbtu.course_project.domain.Character;
+import kz.kbtu.course_project.exception.CharacterNotFoundException;
+import kz.kbtu.course_project.infra.persistence.entity.CharacterEntity;
 import kz.kbtu.course_project.web.controller.CharacterController;
-import kz.kbtu.course_project.web.dto.CharacterResponse;
-import kz.kbtu.course_project.web.dto.CreateCharacterRequest;
-import kz.kbtu.course_project.web.dto.UpdateCharacterRequest;
+import kz.kbtu.course_project.web.mapper.CharacterDtoMapper;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
-
-import java.util.UUID;
-
-import static org.hamcrest.Matchers.containsString;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.MediaType;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
+import java.util.UUID;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-
-import static org.mockito.Mockito.never;
-
-import kz.kbtu.course_project.exception.CharacterNotFoundException;
-import kz.kbtu.course_project.infra.persistence.entity.CharacterEntity;
-import kz.kbtu.course_project.app.service.CharacterService;
-
-import org.springframework.orm.ObjectOptimisticLockingFailureException;
-
+import static org.hamcrest.Matchers.containsString;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(CharacterController.class)
+@Import(CharacterDtoMapper.class)
 class CharacterControllerTest {
 
     @Autowired
@@ -54,33 +44,53 @@ class CharacterControllerTest {
     @MockitoBean
     private CharacterService characterService;
 
+    private Character createDomainCharacter(
+            UUID id,
+            String name,
+            String role,
+            int eddies,
+            int will,
+            int body,
+            int empathy,
+            int luck
+    ) {
+        Character character = new Character(
+                id,
+                name,
+                role,
+                eddies,
+                5,  // intelligence
+                5,  // reflex
+                5,  // dexterity
+                5,  // technology
+                5,  // cool
+                will,
+                5,  // movement
+                body,
+                empathy,
+                luck
+        );
+
+        character.initializeStats();
+
+        return character;
+    }
+
     /*
         TEST 1 - Create Character
     */
     @Test
     void create_shouldReturn201AndLocation() throws Exception {
 
-        // Arrange: prepare the expected response
         UUID id = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
 
-        CharacterResponse response = new CharacterResponse(
-                id,
-                "V",
-                "Solo",
-                1,
-                2550,
-                40,
-                40,
-                40,
-                40,
-                5,      
-                5, 5, 5, 5, 5, 5, 5, 5, 5, 5
+        Character character = createDomainCharacter(
+                id, "V", "Solo", 2550, 5, 6, 4, 5
         );
 
-        when(characterService.createCharacter(any(CreateCharacterRequest.class)))
-                .thenReturn(response);
+        when(characterService.createCharacter(any(Character.class)))
+                .thenReturn(character);
 
-        // Act: send an HTTP POST request
         mockMvc.perform(post("/api/v1/characters")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -99,8 +109,6 @@ class CharacterControllerTest {
                                     "luck": 5
                                 }
                                 """))
-
-                // Assert: check the HTTP response
                 .andExpect(status().isCreated())
                 .andExpect(header().string("Location", containsString(id.toString())))
                 .andExpect(jsonPath("$.id").value(id.toString()))
@@ -118,26 +126,14 @@ class CharacterControllerTest {
     @Test
     void getOne_shouldReturn200AndCharacter() throws Exception {
 
-        // Arrange
         UUID id = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
 
-        CharacterResponse response = new CharacterResponse(
-                id,
-                "V",
-                "Solo",
-                1,
-                2550,
-                40,
-                40,
-                40,
-                40,
-                5,
-                5, 5, 5, 5, 5, 5, 5, 5, 5, 5
+        Character character = createDomainCharacter(
+                id, "V", "Solo", 2550, 5, 6, 4, 5
         );
 
-        when(characterService.getCharacter(id)).thenReturn(response);
+        when(characterService.getCharacter(id)).thenReturn(character);
 
-        // Act and Assert
         mockMvc.perform(get("/api/v1/characters/{id}", id))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(id.toString()))
@@ -153,32 +149,20 @@ class CharacterControllerTest {
     @Test
     void getAll_shouldReturn200AndPaginatedCharacters() throws Exception {
 
-        // Arrange
         UUID id = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
 
-        CharacterResponse response = new CharacterResponse(
-                id,
-                "V",
-                "Solo",
-                1,
-                2550,
-                40,
-                40,
-                40,
-                40,
-                5,
-                5, 5, 5, 5, 5, 5, 5, 5, 5, 5
+        Character character = createDomainCharacter(
+                id, "V", "Solo", 2550, 5, 6, 4, 5
         );
 
         Pageable pageable = PageRequest.of(0, 20);
 
-        Page<CharacterResponse> characterPage =
-                new PageImpl<>(List.of(response), pageable, 1);
+        Page<Character> characterPage =
+                new PageImpl<>(List.of(character), pageable, 1);
 
         when(characterService.getAllCharacters(any(Pageable.class)))
                 .thenReturn(characterPage);
 
-        // Act and Assert
         mockMvc.perform(get("/api/v1/characters")
                         .param("page", "0")
                         .param("size", "20"))
@@ -199,47 +183,35 @@ class CharacterControllerTest {
     @Test
     void update_shouldReturn200AndUpdatedCharacter() throws Exception {
 
-        // Arrange
         UUID id = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
 
-        CharacterResponse response = new CharacterResponse(
-                id,
-                "V Updated",
-                "Netrunner",
-                1,
-                3000,
-                50,
-                60,
-                40,
-                40,
-                5,
-                5, 5, 5, 5, 5, 5, 5, 7, 6, 5
+        Character character = createDomainCharacter(
+                id, "V Updated", "Netrunner", 3000, 8, 7, 6, 5
         );
 
         when(characterService.updateCharacter(
-                org.mockito.ArgumentMatchers.eq(id),
-                any(UpdateCharacterRequest.class)
-        )).thenReturn(response);
+                eq(id),
+                any(Character.class)
+        )).thenReturn(character);
 
-        // Act and Assert
         mockMvc.perform(put("/api/v1/characters/{id}", id)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                {
-                    "name": "V Updated",
-                    "role": "Netrunner",
-                    "eddies": 3000,
-                    "intelligence": 5,
-                    "reflex": 5,
-                    "dexterity": 5,
-                    "technology": 5,
-                    "cool": 5,
-                    "will": 5,
-                    "movement": 5,
-                    "body": 7,
-                    "empathy": 6,
-                    "luck": 5
-                }
+                                {
+                                    "name": "V Updated",
+                                    "role": "Netrunner",
+                                    "eddies": 3000,
+                                    "intelligence": 5,
+                                    "reflex": 5,
+                                    "dexterity": 5,
+                                    "technology": 5,
+                                    "cool": 5,
+                                    "will": 5,
+                                    "movement": 5,
+                                    "body": 7,
+                                    "empathy": 6,
+                                    "luck": 5
+                                }
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(id.toString()))
@@ -248,7 +220,6 @@ class CharacterControllerTest {
                 .andExpect(jsonPath("$.eddies").value(3000))
                 .andExpect(jsonPath("$.maxHealth").value(50))
                 .andExpect(jsonPath("$.maxHumanity").value(60));
-                
     }
 
     /*
@@ -257,30 +228,21 @@ class CharacterControllerTest {
     @Test
     void delete_shouldReturn204NoContent() throws Exception {
 
-        // Arrange
         UUID id = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
 
-        // Act and Assert
         mockMvc.perform(delete("/api/v1/characters/{id}", id))
                 .andExpect(status().isNoContent())
                 .andExpect(content().string(""));
 
-        // Verify that the controller called the service
         verify(characterService).deleteCharacter(id);
     }
 
-
-    /*
-        Pessimistic Tests
-    */
-    
     /*
         TEST 6 - Create Character with Invalid Data
     */
     @Test
     void create_withInvalidData_shouldReturn400() throws Exception {
 
-        // Act and Assert
         mockMvc.perform(post("/api/v1/characters")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -304,9 +266,8 @@ class CharacterControllerTest {
                 .andExpect(jsonPath("$.title").value("Validation Failed"))
                 .andExpect(jsonPath("$.invalid_fields.name").exists());
 
-        // Validation should stop the request before it reaches the service
         verify(characterService, never())
-                .createCharacter(any(CreateCharacterRequest.class));
+                .createCharacter(any(Character.class));
     }
 
     /*
@@ -315,13 +276,11 @@ class CharacterControllerTest {
     @Test
     void getOne_whenCharacterDoesNotExist_shouldReturn404() throws Exception {
 
-        // Arrange
         UUID id = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
 
         when(characterService.getCharacter(id))
                 .thenThrow(new CharacterNotFoundException(id));
 
-        // Act and Assert
         mockMvc.perform(get("/api/v1/characters/{id}", id))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404))
@@ -341,17 +300,15 @@ class CharacterControllerTest {
     @Test
     void update_whenOptimisticLockingConflictOccurs_shouldReturn409() throws Exception {
 
-        // Arrange
         UUID id = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
 
         when(characterService.updateCharacter(
                 eq(id),
-                any(UpdateCharacterRequest.class)
+                any(Character.class)
         )).thenThrow(
                 new ObjectOptimisticLockingFailureException(CharacterEntity.class, id)
         );
 
-        // Act and Assert
         mockMvc.perform(put("/api/v1/characters/{id}", id)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -388,15 +345,13 @@ class CharacterControllerTest {
     @Test
     void update_whenCharacterDoesNotExist_shouldReturn404() throws Exception {
 
-        // Arrange
         UUID id = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
 
         when(characterService.updateCharacter(
                 eq(id),
-                any(UpdateCharacterRequest.class)
+                any(Character.class)
         )).thenThrow(new CharacterNotFoundException(id));
 
-        // Act and Assert
         mockMvc.perform(put("/api/v1/characters/{id}", id)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -429,14 +384,12 @@ class CharacterControllerTest {
     @Test
     void delete_whenCharacterDoesNotExist_shouldReturn404() throws Exception {
 
-        // Arrange
         UUID id = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
 
-        org.mockito.Mockito.doThrow(new CharacterNotFoundException(id))
+        doThrow(new CharacterNotFoundException(id))
                 .when(characterService)
                 .deleteCharacter(id);
 
-        // Act and Assert
         mockMvc.perform(delete("/api/v1/characters/{id}", id))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404))

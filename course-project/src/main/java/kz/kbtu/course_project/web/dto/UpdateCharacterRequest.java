@@ -4,6 +4,7 @@ package kz.kbtu.course_project.web.dto;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public record UpdateCharacterRequest(
@@ -16,6 +17,7 @@ public record UpdateCharacterRequest(
     @Size(max = 50, message = "Role must not exceed 50 characters")
     String role,
 
+    @NotNull(message = "Eddies must not be null")
     @Min(0)
     Integer eddies,
 
