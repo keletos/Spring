@@ -18,7 +18,18 @@ spring:
         generate_statistics: true
         format_sql: true
 
+  kafka:
+    admin:
+      auto-create: false
+    listener:
+      auto-startup: false
+
   data:
     web:
       pageable:
         max-page-size: 100
+
+app:
+  messaging:
+    kafka:
+      enabled: false

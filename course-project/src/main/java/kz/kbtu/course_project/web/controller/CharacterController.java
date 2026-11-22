@@ -8,6 +8,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
+import kz.kbtu.course_project.app.model.PageResult;
+import kz.kbtu.course_project.app.model.PaginationQuery;
+import kz.kbtu.course_project.app.model.SortOrder;
 import kz.kbtu.course_project.app.service.CharacterService;
 import kz.kbtu.course_project.domain.Character;
 import kz.kbtu.course_project.web.dto.CharacterResponse;
@@ -15,6 +18,8 @@ import kz.kbtu.course_project.web.dto.CreateCharacterRequest;
 import kz.kbtu.course_project.web.dto.UpdateCharacterRequest;
 import kz.kbtu.course_project.web.mapper.CharacterDtoMapper;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.data.web.PagedModel;
@@ -55,11 +60,10 @@ public class CharacterController {
                     description = "Character created successfully.",
                     content = @Content(schema = @Schema(implementation = CharacterResponse.class))
             ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "Request body is invalid or violates validation constraints.",
-                    content = @Content(schema = @Schema(implementation = ProblemDetail.class))
-            )
+            @ApiResponse(responseCode = "400", description = "Request body is invalid or violates validation constraints.",
+                    content = @Content(schema = @Schema(implementation = ProblemDetail.class))),
+            @ApiResponse(responseCode = "500", description = "An unexpected server error occurred.",
+                    content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     })
     @PostMapping
     public ResponseEntity<CharacterResponse> create(
@@ -92,11 +96,10 @@ public class CharacterController {
                     description = "The supplied ID is not a valid UUID.",
                     content = @Content(schema = @Schema(implementation = ProblemDetail.class))
             ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "No character exists with the supplied ID.",
-                    content = @Content(schema = @Schema(implementation = ProblemDetail.class))
-            )
+            @ApiResponse(responseCode = "404", description = "No character exists with the supplied ID.",
+                    content = @Content(schema = @Schema(implementation = ProblemDetail.class))),
+            @ApiResponse(responseCode = "500", description = "An unexpected server error occurred.",
+                    content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     })
     @GetMapping("/{id}")
     public ResponseEntity<CharacterResponse> getOne(
@@ -112,20 +115,41 @@ public class CharacterController {
             description = "Returns a paginated list of characters. Supports page, size and sort query parameters."
     )
     @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Page of characters returned successfully.",
-                    content = @Content(schema = @Schema(implementation = PagedModel.class))
-            )
+            @ApiResponse(responseCode = "200", description = "Page of characters returned successfully.",
+                    content = @Content(schema = @Schema(implementation = PagedModel.class))),
+            @ApiResponse(responseCode = "400", description = "A pagination or sorting parameter is invalid.",
+                    content = @Content(schema = @Schema(implementation = ProblemDetail.class))),
+            @ApiResponse(responseCode = "500", description = "An unexpected server error occurred.",
+                    content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     })
     @GetMapping
     public PagedModel<CharacterResponse> getAll(
             @PageableDefault(size = 20, sort = "name") Pageable pageable
     ) {
-        return new PagedModel<>(
-                characterService.getAllCharacters(pageable)
-                        .map(dtoMapper::toResponse)
+        PaginationQuery query = new PaginationQuery(
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                pageable.getSort().stream()
+                        .map(order -> new SortOrder(
+                                order.getProperty(),
+                                order.isAscending()
+                                        ? SortOrder.Direction.ASC
+                                        : SortOrder.Direction.DESC
+                        ))
+                        .toList()
         );
+
+        PageResult<Character> result = characterService.getAllCharacters(query);
+
+        Page<CharacterResponse> responsePage = new PageImpl<>(
+                result.content().stream()
+                        .map(dtoMapper::toResponse)
+                        .toList(),
+                pageable,
+                result.totalElements()
+        );
+
+        return new PagedModel<>(responsePage);
     }
 
     @Operation(
@@ -143,11 +167,14 @@ public class CharacterController {
                     description = "Request body is invalid or violates validation constraints.",
                     content = @Content(schema = @Schema(implementation = ProblemDetail.class))
             ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "No character exists with the supplied ID.",
-                    content = @Content(schema = @Schema(implementation = ProblemDetail.class))
-            )
+            @ApiResponse(responseCode = "400", description = "The supplied ID or request body is invalid.",
+                    content = @Content(schema = @Schema(implementation = ProblemDetail.class))),
+            @ApiResponse(responseCode = "404", description = "No character exists with the supplied ID.",
+                    content = @Content(schema = @Schema(implementation = ProblemDetail.class))),
+            @ApiResponse(responseCode = "409", description = "The character was concurrently modified.",
+                    content = @Content(schema = @Schema(implementation = ProblemDetail.class))),
+            @ApiResponse(responseCode = "500", description = "An unexpected server error occurred.",
+                    content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     })
     @PutMapping("/{id}")
     public ResponseEntity<CharacterResponse> update(
@@ -166,11 +193,12 @@ public class CharacterController {
     )
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Character deleted successfully."),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "No character exists with the supplied ID.",
-                    content = @Content(schema = @Schema(implementation = ProblemDetail.class))
-            )
+            @ApiResponse(responseCode = "400", description = "The supplied ID is not a valid UUID.",
+                    content = @Content(schema = @Schema(implementation = ProblemDetail.class))),
+            @ApiResponse(responseCode = "404", description = "No character exists with the supplied ID.",
+                    content = @Content(schema = @Schema(implementation = ProblemDetail.class))),
+            @ApiResponse(responseCode = "500", description = "An unexpected server error occurred.",
+                    content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     })
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(

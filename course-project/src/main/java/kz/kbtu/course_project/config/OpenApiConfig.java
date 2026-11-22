@@ -16,9 +16,18 @@ public class OpenApiConfig {
                         .title("Cyberpunk RED Character API")
                         .version("1.0.0")
                         .description("""
-                                REST API for managing Cyberpunk RED player characters.
-                                The API exposes versioned character-management endpoints.
+                                REST API for managing Cyberpunk RED player characters
+                                and retrieving external compendium metadata.
+                                All endpoints return documented response schemas.
                                 """));
+    }
+
+    @Bean
+    public GroupedOpenApi apiV1() {
+        return GroupedOpenApi.builder()
+                .group("api-v1")
+                .pathsToMatch("/api/v1/**", "/profile")
+                .build();
     }
 
     @Bean

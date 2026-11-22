@@ -1,9 +1,11 @@
 
 package kz.kbtu.course_project.controller;
 
+import kz.kbtu.course_project.app.exception.CharacterNotFoundException;
+import kz.kbtu.course_project.app.model.PageResult;
+import kz.kbtu.course_project.app.model.PaginationQuery;
 import kz.kbtu.course_project.app.service.CharacterService;
 import kz.kbtu.course_project.domain.Character;
-import kz.kbtu.course_project.exception.CharacterNotFoundException;
 import kz.kbtu.course_project.infra.persistence.entity.CharacterEntity;
 import kz.kbtu.course_project.web.controller.CharacterController;
 import kz.kbtu.course_project.web.mapper.CharacterDtoMapper;
@@ -12,10 +14,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -156,12 +154,10 @@ class CharacterControllerTest {
                 id, "V", "Solo", 2550, 5, 6, 4, 5
         );
 
-        Pageable pageable = PageRequest.of(0, 20);
+        PageResult<Character> characterPage =
+                new PageResult<>(List.of(character), 0, 20, 1, 1);
 
-        Page<Character> characterPage =
-                new PageImpl<>(List.of(character), pageable, 1);
-
-        when(characterService.getAllCharacters(any(Pageable.class)))
+        when(characterService.getAllCharacters(any(PaginationQuery.class)))
                 .thenReturn(characterPage);
 
         mockMvc.perform(get("/api/v1/characters")

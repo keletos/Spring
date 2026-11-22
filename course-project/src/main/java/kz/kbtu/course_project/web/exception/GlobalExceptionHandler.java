@@ -1,7 +1,15 @@
+package kz.kbtu.course_project.web.exception;
 
-package kz.kbtu.course_project.exception;
+import kz.kbtu.course_project.app.exception.CharacterNotFoundException;
 
 import jakarta.servlet.http.HttpServletRequest;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.TypeMismatchException;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -9,10 +17,6 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
-import org.springframework.beans.TypeMismatchException;
-import org.springframework.core.Ordered;
-import org.springframework.core.annotation.Order;
-import org.springframework.dao.OptimisticLockingFailureException;
 
 import java.net.URI;
 import java.util.LinkedHashMap;
@@ -22,24 +26,21 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    private static final Logger logger =
+            LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
     @ExceptionHandler(CharacterNotFoundException.class)
     public ProblemDetail handleCharacterNotFound(
             CharacterNotFoundException ex,
             HttpServletRequest request) {
-
-        return createProblem(
-                HttpStatus.NOT_FOUND,
-                "Character Not Found",
-                ex.getMessage(),
-                request
-        );
+        return createProblem(HttpStatus.NOT_FOUND, "Character Not Found",
+                ex.getMessage(), request);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ProblemDetail handleValidationErrors(
             MethodArgumentNotValidException ex,
             HttpServletRequest request) {
-
         ProblemDetail problem = createProblem(
                 HttpStatus.BAD_REQUEST,
                 "Validation Failed",
@@ -48,16 +49,9 @@ public class GlobalExceptionHandler {
         );
 
         Map<String, String> invalidFields = new LinkedHashMap<>();
-
         ex.getBindingResult().getFieldErrors().forEach(error ->
-                invalidFields.put(
-                        error.getField(),
-                        error.getDefaultMessage()
-                )
-        );
-
+                invalidFields.put(error.getField(), error.getDefaultMessage()));
         problem.setProperty("invalid_fields", invalidFields);
-
         return problem;
     }
 
@@ -65,13 +59,39 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleUnreadableMessage(
             HttpMessageNotReadableException ex,
             HttpServletRequest request) {
+        return createProblem(HttpStatus.BAD_REQUEST, "Invalid Request Body",
+                "The request body is missing or contains invalid JSON.", request);
+    }
 
-        return createProblem(
-                HttpStatus.BAD_REQUEST,
-                "Invalid Request Body",
-                "The request body is missing or contains invalid JSON.",
-                request
-        );
+    @ExceptionHandler(TypeMismatchException.class)
+    public ProblemDetail handleTypeMismatch(
+            TypeMismatchException ex,
+            HttpServletRequest request) {
+        String parameterName = ex instanceof MethodArgumentTypeMismatchException mismatch
+                ? mismatch.getName()
+                : "parameter";
+
+        return createProblem(HttpStatus.BAD_REQUEST, "Invalid Parameter",
+                "Parameter '" + parameterName + "' has an invalid value.", request);
+    }
+
+    @ExceptionHandler(OptimisticLockingFailureException.class)
+    public ProblemDetail handleOptimisticLocking(
+            OptimisticLockingFailureException ex,
+            HttpServletRequest request) {
+        return createProblem(HttpStatus.CONFLICT, "Resource Conflict",
+                "The character was modified by another request. Please retrieve the latest version and try again.",
+                request);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ProblemDetail handleUnexpectedException(
+            Exception ex,
+            HttpServletRequest request) {
+        logger.error("Unhandled exception for request {} {}", request.getMethod(),
+                request.getRequestURI(), ex);
+        return createProblem(HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected Error",
+                "An unexpected error occurred.", request);
     }
 
     private ProblemDetail createProblem(
@@ -79,64 +99,11 @@ public class GlobalExceptionHandler {
             String title,
             String detail,
             HttpServletRequest request) {
-
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
-                status,
-                detail
-        );
-
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, detail);
         problem.setTitle(title);
         problem.setType(URI.create("about:blank"));
         problem.setInstance(URI.create(request.getRequestURI()));
-
-        // Keep the same additional property in every response.
         problem.setProperty("invalid_fields", Map.of());
-
         return problem;
-    }
-
-    @ExceptionHandler(TypeMismatchException.class)
-    public ProblemDetail handleTypeMismatch(
-            TypeMismatchException ex,
-            HttpServletRequest request) {
-
-        String parameterName = ex instanceof MethodArgumentTypeMismatchException mismatch
-                ? mismatch.getName()
-                : "parameter";
-
-        return createProblem(
-                HttpStatus.BAD_REQUEST,
-                "Invalid Parameter",
-                "Parameter '" + parameterName + "' has an invalid value.",
-                request
-        );
-    }
-
-    @ExceptionHandler(Exception.class)
-    public ProblemDetail handleUnexpectedException(
-            Exception ex,
-            HttpServletRequest request) {
-
-        ex.printStackTrace();
-
-        return createProblem(
-                HttpStatus.INTERNAL_SERVER_ERROR,
-                "Unexpected Error",
-                "An unexpected error occurred.",
-                request
-        );
-    }
-
-    @ExceptionHandler(OptimisticLockingFailureException.class)
-    public ProblemDetail handleOptimisticLocking(
-            OptimisticLockingFailureException ex,
-            HttpServletRequest request) {
-
-        return createProblem(
-                HttpStatus.CONFLICT,
-                "Resource Conflict",
-                "The character was modified by another request. Please retrieve the latest version and try again.",
-                request
-        );
     }
 }

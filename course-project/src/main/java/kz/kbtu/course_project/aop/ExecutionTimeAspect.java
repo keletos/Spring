@@ -15,21 +15,19 @@ public class ExecutionTimeAspect {
             LoggerFactory.getLogger(ExecutionTimeAspect.class);
 
     @Around("execution(public * kz.kbtu.course_project.app.service..*(..))")
-    public Object logExecutionTime(ProceedingJoinPoint joinPoint)
-            throws Throwable {
-                
+    public Object logExecutionTime(ProceedingJoinPoint joinPoint) throws Throwable {
         long startTime = System.nanoTime();
+        String method = joinPoint.getSignature().toShortString();
 
         try {
-            return joinPoint.proceed();
-        } finally {
-            long executionTime = System.nanoTime() - startTime;
-
-            logger.info(
-                    "Method {} executed in {} ms",
-                    joinPoint.getSignature().toShortString(),
-                    executionTime / 1_000_000.0
-            );
+            Object result = joinPoint.proceed();
+            logger.info("Method {} completed in {} ms",
+                    method, (System.nanoTime() - startTime) / 1_000_000.0);
+            return result;
+        } catch (Throwable exception) {
+            logger.error("Method {} failed after {} ms",
+                    method, (System.nanoTime() - startTime) / 1_000_000.0, exception);
+            throw exception;
         }
     }
 }

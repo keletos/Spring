@@ -1,40 +1,123 @@
-# KBTU · Backend Framework. Spring (Fall 2026)
+# Cyberpunk RED Character API
 
-## TSIS Practice 2 & Practice 3
+Spring Boot backend project for managing Cyberpunk RED characters and demonstrating resilient REST integration and event-driven communication.
 
-**Student:** Aliaskarov Nursultan  
-**Course Module:** INFT3132 · Week 2 & Week 3  
+## Stack
 
----
+- Java 21 and Spring Boot 4.1.1
+- Spring MVC, Spring Data JPA and PostgreSQL
+- Flyway database migrations
+- Spring for Apache Kafka
+- Resilience4j retry and circuit breaker
+- Caffeine bounded cache
+- Springdoc OpenAPI / Swagger UI
+- Maven Wrapper
 
-### Implementation Details
-1. **Project Build & Structure (Week 2):** Fully managed by Maven. Parent versions are handled by the Spring Boot BOM. Custom configuration is isolated using profiles.
-2. **Externalized Configuration:** Added structured environment settings via modern Java `record` annotated with `@ConfigurationProperties` and validated using `@Validated`.
-3. **Inversion of Control & DI (Week 3):** Refactored the architecture to strict **Constructor Injection**. All service-layer fields are marked as `private final`. No field-level `@Autowired` annotations are used.
-4. **Conditional Beans:** Implemented a polymorphic service layer (`NotificationService`) where component creation is driven dynamically by profile-specific configuration via `@ConditionalOnProperty`.
+## SIS 3 implementation
 
----
+| Requirement | Implementation |
+|---|---|
+| OpenAPI for every endpoint and errors | Global OpenAPI document, `api-v1` group and `characters-v1` group |
+| Resilient outbound REST client | GitHub RestClient with connect/read timeouts, three attempts, circuit breaker and fallback response |
+| Logging aspect and bounded cache | Execution-time aspect logs success/failure; Caffeine cache limited to 1,000 entries with 10-minute expiry |
+| Domain event and aggregate key | `CharacterCreatedEvent`; Kafka key is the character UUID |
+| Consumer group and idempotency | `character-audit-consumer`; `processed_events` primary key de-duplicates deliveries |
+| Dead-letter topic and poison message | `characters.created.DLT`; two retries for listener failures, malformed JSON routed directly to DLT |
+| Local Kafka instructions | `course-project/compose.kafka.yml` below |
 
-### How to Build and Run
+Character creation writes the character and an outbox row in the same PostgreSQL transaction. A scheduled relay publishes pending outbox rows to Kafka and marks them published after broker acknowledgement. This is an at-least-once design: a crash after Kafka accepts a record but before the outbox update can cause a duplicate. The consumer is therefore idempotent by `eventId`.
 
-#### 1. Build the Artifact
-To clean the project and compile the executable "fat" jar, run:
-```bash
-./mvnw clean package
+## Prerequisites
+
+- JDK 21
+- Docker Desktop with Docker Compose
+- PostgreSQL running locally
+- Database `Spring_CP_RED_DEV` (and `Spring_CP_RED_TEST` when running integration tests)
+- PostgreSQL user/password matching your local configuration
+
+The application reads the PostgreSQL password from `DB_PASSWORD`.
+
+## Start Kafka locally
+
+From the repository root:
+
+```powershell
+docker compose -f course-project/compose.kafka.yml up -d
 ```
 
-#### 2. Run with Development Profile (Discount Season Enabled)
-This profile activates `DiscountNotificationService` and returns special discount rates:
-```bash
-java -jar target/course-project-0.0.1-SNAPSHOT.jar --spring.profiles.active=dev
-```
-* **Test Endpoint:** `http://localhost:8080/order`
-* **Expected Output:** `Статус заказа: Внимание! Активирован режим распродаж и скидок!`
+Check the broker:
 
-#### 3. Run with Testing Profile (Standard Rates Active)
-This profile switches off the discount logic and falls back to `RegularNotificationService`:
-```bash
-java -jar target/course-project-0.0.1-SNAPSHOT.jar --spring.profiles.active=test
+```powershell
+docker compose -f course-project/compose.kafka.yml ps
 ```
-* **Test Endpoint:** `http://localhost:8080/order`
-* **Expected Output:** `Статус заказа: Обычный режим работы. Действуют стандартные тарифы.`
+
+Stop Kafka:
+
+```powershell
+docker compose -f course-project/compose.kafka.yml down
+```
+
+Kafka is available at `localhost:9092`. Override it with `KAFKA_BOOTSTRAP_SERVERS` if needed.
+
+## Run the application
+
+From `course-project`:
+
+```powershell
+$env:DB_PASSWORD = "your-postgres-password"
+.\mvnw.cmd clean verify
+.\mvnw.cmd spring-boot:run
+```
+
+The default profile is `dev`. Flyway applies the schema migrations automatically.
+
+Useful URLs:
+
+- Swagger UI: http://localhost:8080/swagger-ui.html
+- Complete API OpenAPI JSON: http://localhost:8080/v3/api-docs
+- Complete versioned API group: http://localhost:8080/v3/api-docs/api-v1
+- Characters-only API group: http://localhost:8080/v3/api-docs/characters-v1
+
+## Verify the Kafka flow
+
+1. Start PostgreSQL and Kafka.
+2. Start the application.
+3. Create a character through Swagger UI or the REST API.
+4. Check application logs for the outbox relay publishing a `CharacterCreatedEvent` and the consumer handling it.
+5. Inspect the consumer audit table:
+
+```sql
+SELECT * FROM character_created_audit ORDER BY occurred_at DESC;
+SELECT * FROM outbox_events ORDER BY created_at DESC;
+SELECT * FROM processed_events ORDER BY handled_at DESC;
+```
+
+The producer uses the character UUID as the Kafka key. The consumer runs in the `character-audit-consumer` group with concurrency 3, matching the topic's three partitions.
+
+## Poison-message / DLT demonstration
+
+The consumer uses an error-handling deserializer and a `DefaultErrorHandler`. Listener-processing failures are retried twice with a one-second fixed backoff. Malformed JSON is a non-retryable deserialization failure and is routed directly to `characters.created.DLT`, because repeating the same invalid payload cannot make it valid.
+
+Send malformed JSON to the source topic:
+
+```powershell
+docker exec -i course-project-kafka /opt/kafka/bin/kafka-console-producer.sh --bootstrap-server localhost:9092 --topic characters.created --property parse.key=true --property key.separator=:
+```
+
+At the producer prompt, enter a record with a key and invalid JSON value:
+
+```text
+poison-demo:{ this is not valid json
+```
+
+Read the dead-letter topic:
+
+```powershell
+docker exec -it course-project-kafka /opt/kafka/bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic characters.created.DLT --from-beginning --property print.key=true --property print.headers=true
+```
+
+The failed record is parked in the DLT instead of blocking the source partition indefinitely. In production, alert on a non-empty DLT and replay only after the cause is fixed.
+
+## Test notes
+
+The `test` profile disables Kafka listeners and topic creation so database-backed tests do not require a running broker. Integration tests still require the configured PostgreSQL test database and `DB_PASSWORD`.

@@ -4,6 +4,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.mock.web.MockHttpServletRequest;
+
+import kz.kbtu.course_project.web.exception.GlobalExceptionHandler;
+
 import org.springframework.beans.TypeMismatchException;
 
 import static org.junit.jupiter.api.Assertions.*;

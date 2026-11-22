@@ -1,12 +1,17 @@
+
 package kz.kbtu.course_project.web.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import kz.kbtu.course_project.app.model.CompendiumInfo;
 import kz.kbtu.course_project.app.service.CompendiumService;
 import kz.kbtu.course_project.web.dto.CompendiumInfoResponse;
 import org.springframework.http.MediaType;
+import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -31,11 +36,31 @@ public class CompendiumController {
                     "If GitHub is unavailable, the endpoint returns a documented fallback response."
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Repository metadata or fallback information returned."),
-            @ApiResponse(responseCode = "500", description = "An unexpected application error occurred.")
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Repository metadata or fallback information returned.",
+                    content = @Content(schema = @Schema(implementation = CompendiumInfoResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "An unexpected application error occurred.",
+                    content = @Content(schema = @Schema(implementation = ProblemDetail.class))
+            )
     })
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public CompendiumInfoResponse getCompendiumInfo() {
-        return compendiumService.getCompendiumInfo();
+        CompendiumInfo info = compendiumService.getCompendiumInfo();
+
+        return new CompendiumInfoResponse(
+                info.repository(),
+                info.description(),
+                info.url(),
+                info.stars(),
+                info.lastUpdated(),
+                info.available(),
+                info.available()
+                        ? "Repository metadata retrieved successfully."
+                        : "The external service is temporarily unavailable. Please try again later."
+        );
     }
 }

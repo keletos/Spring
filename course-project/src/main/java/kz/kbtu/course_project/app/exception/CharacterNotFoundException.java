@@ -1,5 +1,4 @@
-
-package kz.kbtu.course_project.exception;
+package kz.kbtu.course_project.app.exception;
 
 import java.util.UUID;
 

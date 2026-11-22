@@ -1,8 +1,10 @@
 package kz.kbtu.course_project.service;
 
+import kz.kbtu.course_project.app.exception.CharacterNotFoundException;
+import kz.kbtu.course_project.app.model.PageResult;
+import kz.kbtu.course_project.app.model.PaginationQuery;
 import kz.kbtu.course_project.app.service.CharacterService;
 import kz.kbtu.course_project.domain.Character;
-import kz.kbtu.course_project.exception.CharacterNotFoundException;
 import kz.kbtu.course_project.infra.persistence.entity.CharacterEntity;
 import kz.kbtu.course_project.infra.persistence.repository.CharacterRepository;
 
@@ -24,9 +26,6 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
@@ -186,20 +185,20 @@ class CharacterCachingIntegrationTest {
     void getAllCharacters_shouldUseCacheOnSecondRequest() {
         createCharacter();
 
-        Pageable pageable = PageRequest.of(0, 10);
+        PaginationQuery query = new PaginationQuery(0, 10, List.of());
 
         // Exclude the INSERT query from our measurements.
         statistics.clear();
 
-        Page<Character> first = characterService.getAllCharacters(pageable);
+        PageResult<Character> first = characterService.getAllCharacters(query);
         long firstQueryCount = statistics.getPrepareStatementCount();
 
-        Page<Character> second = characterService.getAllCharacters(pageable);
+        PageResult<Character> second = characterService.getAllCharacters(query);
         long secondQueryCount =
                 statistics.getPrepareStatementCount() - firstQueryCount;
 
-        assertThat(first.getTotalElements()).isGreaterThan(0);
-        assertThat(second.getTotalElements()).isEqualTo(first.getTotalElements());
+        assertThat(first.totalElements()).isGreaterThan(0);
+        assertThat(second.totalElements()).isEqualTo(first.totalElements());
 
         assertThat(firstQueryCount).isGreaterThan(0);
         assertThat(secondQueryCount).isZero();
@@ -207,13 +206,13 @@ class CharacterCachingIntegrationTest {
 
     @Test
     void createCharacter_shouldEvictCachedPages() {
-        Pageable pageable = PageRequest.of(0, 100);
+        PaginationQuery query = new PaginationQuery(0, 100, List.of());
 
         // Populate the pagination cache.
-        Page<Character> before =
-                characterService.getAllCharacters(pageable);
+        PageResult<Character> before =
+                characterService.getAllCharacters(query);
 
-        long previousTotal = before.getTotalElements();
+        long previousTotal = before.totalElements();
 
         Character newCharacter = new Character(
                 null, "Created Cache Test", "Solo", 500,
@@ -226,13 +225,13 @@ class CharacterCachingIntegrationTest {
 
         statistics.clear();
 
-        Page<Character> after =
-                characterService.getAllCharacters(pageable);
+        PageResult<Character> after =
+                characterService.getAllCharacters(query);
 
         long queryCount = statistics.getPrepareStatementCount();
 
-        assertThat(after.getTotalElements()).isEqualTo(previousTotal + 1);
-        assertThat(after.getContent())
+        assertThat(after.totalElements()).isEqualTo(previousTotal + 1);
+        assertThat(after.content())
                 .anyMatch(character ->
                         character.getName().equals("Created Cache Test"));
         assertThat(queryCount).isGreaterThan(0);

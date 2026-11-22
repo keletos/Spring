@@ -1,69 +1,60 @@
-
 package kz.kbtu.course_project.app.service;
 
-import kz.kbtu.course_project.infra.external.github.GitHubCompendiumClient;
-import kz.kbtu.course_project.infra.external.github.GitHubRepositoryResponse;
-import kz.kbtu.course_project.web.dto.CompendiumInfoResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClientException;
+import kz.kbtu.course_project.app.exception.CompendiumUnavailableException;
+import kz.kbtu.course_project.app.model.CompendiumInfo;
+import kz.kbtu.course_project.app.port.out.CompendiumRepositoryPort;
 
-@Service
+import java.util.logging.Logger;
+
 public class CompendiumService {
 
     private static final Logger logger =
-            LoggerFactory.getLogger(CompendiumService.class);
+            Logger.getLogger(CompendiumService.class.getName());
 
-    private final GitHubCompendiumClient compendiumClient;
+    private static final String REPOSITORY_NAME =
+            "DankTrain11949/CyberPunk-Red-Fan-Compendium";
+
+    private final CompendiumRepositoryPort compendiumRepository;
     private final String fallbackRepositoryUrl;
 
     public CompendiumService(
-            GitHubCompendiumClient compendiumClient,
-            @Value("${integrations.github.compendium-url}") String fallbackRepositoryUrl
+            CompendiumRepositoryPort compendiumRepository,
+            String fallbackRepositoryUrl
     ) {
-        this.compendiumClient = compendiumClient;
+        this.compendiumRepository = compendiumRepository;
         this.fallbackRepositoryUrl = fallbackRepositoryUrl;
     }
 
-    public CompendiumInfoResponse getCompendiumInfo() {
+    public CompendiumInfo getCompendiumInfo() {
         try {
-            GitHubRepositoryResponse repository =
-                    compendiumClient.fetchCompendiumRepository();
+            CompendiumInfo repository =
+                    compendiumRepository.fetchCompendiumInfo();
 
             if (repository == null) {
-                logger.warn("GitHub returned an empty repository response.");
+                logger.warning("GitHub returned an empty repository response.");
                 return fallbackResponse();
             }
 
-            return new CompendiumInfoResponse(
-                    repository.fullName(),
-                    repository.description(),
-                    repository.htmlUrl(),
-                    repository.stars(),
-                    repository.updatedAt(),
-                    true,
-                    "Repository metadata retrieved successfully."
+            return repository;
+
+        } catch (CompendiumUnavailableException exception) {
+            logger.warning(
+                    "GitHub compendium request failed or circuit is open; using fallback: "
+                            + exception.getMessage()
             );
-        } catch (RestClientException exception) {
-            logger.warn(
-                    "Failed to retrieve Cyberpunk RED compendium metadata from GitHub: {}",
-                    exception.getMessage()
-            );
+
             return fallbackResponse();
         }
     }
 
-    private CompendiumInfoResponse fallbackResponse() {
-        return new CompendiumInfoResponse(
-                "DankTrain11949/CyberPunk-Red-Fan-Compendium",
+    private CompendiumInfo fallbackResponse() {
+        return new CompendiumInfo(
+                REPOSITORY_NAME,
                 "Repository metadata is temporarily unavailable.",
                 fallbackRepositoryUrl,
                 0,
                 null,
-                false,
-                "The external service is temporarily unavailable. Please try again later."
+                false
         );
     }
 }

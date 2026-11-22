@@ -1,4 +1,4 @@
-package kz.kbtu.course_project.externalAPI;
+package kz.kbtu.course_project.external.github;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;

@@ -33,6 +33,15 @@ class OpenApiDocumentationTest {
     }
 
     @Test
+    void completeApiGroup_shouldIncludeEveryApplicationEndpoint() throws Exception {
+        mockMvc.perform(get("/v3/api-docs/api-v1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.paths['/api/v1/characters']").exists())
+                .andExpect(jsonPath("$.paths['/api/v1/compendium'].get").exists())
+                .andExpect(jsonPath("$.paths['/profile'].get").exists());
+    }
+
+    @Test
     void swaggerUi_shouldBeAvailable() throws Exception {
         mockMvc.perform(get("/swagger-ui.html"))
                 .andExpect(status().is3xxRedirection());
