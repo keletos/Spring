@@ -30,6 +30,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -399,4 +400,72 @@ class CharacterControllerTest {
                 .andExpect(jsonPath("$.instance")
                         .value("/api/v1/characters/" + id));
     }
+
+    /*
+        TEST 11 - Create Character with Malformed JSON
+    */
+
+    @Test
+    void create_withMalformedJson_shouldReturn400() throws Exception {
+
+        mockMvc.perform(post("/api/v1/characters")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\": "))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.title").value("Invalid Request Body"))
+                .andExpect(jsonPath("$.detail")
+                        .value("The request body is missing or contains invalid JSON."))
+                .andExpect(jsonPath("$.invalid_fields").isEmpty());
+
+        verify(characterService, never()).createCharacter(any(Character.class));
+    }
+
+    /*
+        TEST 11 - Get Character and receive unexpected exception
+    */
+
+    @Test
+    void getOne_whenUnexpectedExceptionOccurs_shouldReturn500() throws Exception {
+        UUID id = UUID.randomUUID();
+
+        when(characterService.getCharacter(id))
+                .thenThrow(new RuntimeException("Database connection failed"));
+
+        mockMvc.perform(get("/api/v1/characters/{id}", id))
+                .andExpect(status().isInternalServerError())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.status").value(500))
+                .andExpect(jsonPath("$.title").value("Unexpected Error"))
+                .andExpect(jsonPath("$.detail")
+                        .value("An unexpected error occurred."))
+                .andExpect(jsonPath("$.instance")
+                        .value("/api/v1/characters/" + id))
+                .andExpect(jsonPath("$.invalid_fields").isEmpty());
+
+        verify(characterService).getCharacter(id);
+    }
+
+    /*
+        TEST 12 - Get Character with wrong param type
+    */
+
+    @Test
+    void getOne_withInvalidUuid_shouldReturn400() throws Exception {
+        mockMvc.perform(get("/api/v1/characters/not-a-uuid"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.title").value("Invalid Parameter"))
+                .andExpect(jsonPath("$.detail")
+                        .value("Parameter 'id' has an invalid value."))
+                .andExpect(jsonPath("$.instance")
+                        .value("/api/v1/characters/not-a-uuid"))
+                .andExpect(jsonPath("$.invalid_fields").isEmpty());
+
+        verifyNoInteractions(characterService);
+    }
+
+    
 }

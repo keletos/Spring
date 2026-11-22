@@ -1,5 +1,5 @@
 ### Создаем нового Киберпанка
-POST http://localhost:8081/api/v1/characters
+POST http://localhost:8080/api/v1/characters
 Content-Type: application/json
 
 {
@@ -38,7 +38,7 @@ Content-Type: application/json
 
 
 ### Get the created character (paste correct UUID from the response of the previous requests)
-GET http://localhost:8080/api/v1/characters/db245f3f-1487-46af-bfc6-7f7941f55b87
+GET http://localhost:8080/api/v1/characters/cb91fe43-297c-467f-9c59-f820a30d99a5
 Accept: application/json
 
 ### Get all characters
@@ -99,7 +99,7 @@ Content-Type: application/json
 }
 
 ### Update character (paste correct UUID from the response of the previous requests)
-PUT http://localhost:8080/api/v1/characters/db245f3f-1487-46af-bfc6-7f7941f55b87
+PUT http://localhost:8080/api/v1/characters/cb91fe43-297c-467f-9c59-f820a30d99a5
 Content-Type: application/json
 Accept: application/json
 
@@ -120,4 +120,4 @@ Accept: application/json
 }
 
 ### Delete character
-DELETE http://localhost:8080/api/v1/characters/db245f3f-1487-46af-bfc6-7f7941f55b87
+DELETE http://localhost:8080/api/v1/characters/cb91fe43-297c-467f-9c59-f820a30d99a5

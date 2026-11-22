@@ -1,4 +1,3 @@
-
 package kz.kbtu.course_project.app.service;
 
 import kz.kbtu.course_project.domain.Character;
@@ -14,6 +13,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+
 @Service
 public class CharacterService {
 
@@ -28,6 +30,10 @@ public class CharacterService {
         this.persistenceMapper = persistenceMapper;
     }
 
+    @CacheEvict(
+    value = {"characters", "charactersPage"},
+    allEntries = true
+    )
     @Transactional
     public Character createCharacter(Character character) {
 
@@ -39,6 +45,10 @@ public class CharacterService {
         return persistenceMapper.toDomain(savedEntity);
     }
 
+    @CacheEvict(
+    value = {"characters", "charactersPage"},
+    allEntries = true
+    )
     @Transactional
     public Character updateCharacter(UUID id, Character updatedCharacter) {
 
@@ -69,6 +79,10 @@ public class CharacterService {
         return character;
     }
 
+    @CacheEvict(
+    value = {"characters", "charactersPage"},
+    allEntries = true
+    )
     @Transactional
     public void deleteCharacter(UUID id) {
 
@@ -78,6 +92,7 @@ public class CharacterService {
         characterRepository.delete(entity);
     }
 
+    @Cacheable(value = "characters", key = "#id")
     @Transactional(readOnly = true)
     public Character getCharacter(UUID id) {
 
@@ -87,6 +102,7 @@ public class CharacterService {
         return persistenceMapper.toDomain(entity);
     }
 
+    @Cacheable(value = "charactersPage", key = "#pageable")
     @Transactional(readOnly = true)
     public Page<Character> getAllCharacters(Pageable pageable) {
 

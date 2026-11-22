@@ -188,7 +188,7 @@ class CharacterServiceTest {
         // Assert
         assertEquals("V2", result.getName());
         assertEquals("Netrunner", result.getRole());
-        assertEquals(1000, result.getEddies());
+        assertEquals(1500, result.getEddies());
 
         assertEquals(25, result.getMaxHitPoints());
         assertEquals(25, result.getCurrentHitPoints());

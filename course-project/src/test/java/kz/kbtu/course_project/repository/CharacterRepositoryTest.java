@@ -37,7 +37,7 @@ class CharacterRepositoryTest {
             6, 6, 6, 6, 6, 6, 6, 6, 6, 6
         );
 
-        character.setCurrentHumanity(20);
+        character.setLevel(20);
 
         // Act: save the character to PostgreSQL
         CharacterEntity saved = characterRepository.saveAndFlush(character);
@@ -61,7 +61,7 @@ class CharacterRepositoryTest {
         // Act: test the custom JPQL query
         Page<CharacterEntity> foundByLevel =
             characterRepository.findCharactersByLevel(
-                1,
+                20,
                 PageRequest.of(0, 10)
             );
 

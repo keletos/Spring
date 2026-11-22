@@ -15,6 +15,7 @@ spring:
     show-sql: false
     properties:
       hibernate:
+        generate_statistics: true
         format_sql: true
 
   data:

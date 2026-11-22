@@ -18,7 +18,6 @@ public record UpdateCharacterRequest(
     String role,
 
     @NotNull(message = "Eddies must not be null")
-    @Min(0)
     Integer eddies,
 
     @Min(1) @Max(10) int intelligence,
