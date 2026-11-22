@@ -1,0 +1,31 @@
+package kz.kbtu.course_project.config;
+
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Info;
+import org.springdoc.core.models.GroupedOpenApi;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class OpenApiConfig {
+
+    @Bean
+    public OpenAPI courseProjectOpenAPI() {
+        return new OpenAPI()
+                .info(new Info()
+                        .title("Cyberpunk RED Character API")
+                        .version("1.0.0")
+                        .description("""
+                                REST API for managing Cyberpunk RED player characters.
+                                The API exposes versioned character-management endpoints.
+                                """));
+    }
+
+    @Bean
+    public GroupedOpenApi characterApiV1() {
+        return GroupedOpenApi.builder()
+                .group("characters-v1")
+                .pathsToMatch("/api/v1/characters/**", "/api/v1/characters")
+                .build();
+    }
+}

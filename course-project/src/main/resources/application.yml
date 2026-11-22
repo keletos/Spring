@@ -17,3 +17,19 @@ spring:
   logging:
     level:
       org.flywaydb: DEBUG
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+
+integrations:
+  github:
+    base-url: https://api.github.com
+    compendium-path: /repos/DankTrain11949/CyberPunk-Red-Fan-Compendium
+    compendium-url: https://github.com/DankTrain11949/CyberPunk-Red-Fan-Compendium
+    connect-timeout: 2s
+    read-timeout: 3s
