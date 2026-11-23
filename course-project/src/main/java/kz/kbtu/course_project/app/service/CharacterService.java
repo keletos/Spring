@@ -9,6 +9,7 @@ import kz.kbtu.course_project.domain.Character;
 import kz.kbtu.course_project.domain.event.CharacterCreatedEvent;
 
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -73,6 +74,7 @@ public class CharacterService {
         return characterRepository.update(id, character);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @CacheEvict(value = {"characters", "charactersPage"}, allEntries = true)
     @Transactional
     public void deleteCharacter(UUID id) {

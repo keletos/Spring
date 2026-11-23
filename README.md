@@ -121,3 +121,96 @@ The failed record is parked in the DLT instead of blocking the source partition 
 ## Test notes
 
 The `test` profile disables Kafka listeners and topic creation so database-backed tests do not require a running broker. Integration tests still require the configured PostgreSQL test database and `DB_PASSWORD`.
+
+
+## Practice 7 — API security
+
+The API uses database-backed users, BCrypt password hashes and stateless RSA-signed JWT access tokens.
+
+### Security behavior
+
+| Request | Anonymous | STUDENT | ADMIN |
+|---|---:|---:|---:|
+| `GET /api/v1/characters` | 200 | 200 | 200 |
+| `POST /api/v1/characters` | 401 | 201 | 201 |
+| `PUT /api/v1/characters/{id}` | 401 | 200 | 200 |
+| `DELETE /api/v1/characters/{id}` | 401 | 403 | 204 |
+| `POST /api/auth/login` | public | public | public |
+
+Login uses `POST /api/auth/login` with JSON `username` and `password`. The response contains `accessToken`, `tokenType` and `expiresIn` (900 seconds by default). Send the token on protected requests as `Authorization: Bearer <accessToken>`.
+
+### Demo accounts
+
+Migration `V2__create_app_users_and_roles.sql` seeds two accounts for local coursework demonstrations:
+
+| Username | Initial password | Role |
+|---|---|---|
+| `student` | `Student-ChangeMe-2026!` | STUDENT |
+| `admin` | `Admin-ChangeMe-2026!` | ADMIN |
+
+Passwords are stored as BCrypt hashes. These are demonstration credentials only: replace them or remove the seed rows before deploying or exposing the API.
+
+### RSA signing keys
+
+The application does not commit signing keys. Generate a local 2048-bit RSA key pair and provide file paths through environment variables:
+
+```bash
+mkdir -p .secrets
+openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out .secrets/jwt-private.pem
+openssl pkey -in .secrets/jwt-private.pem -pubout -out .secrets/jwt-public.pem
+```
+
+PowerShell equivalent for setting the variables before running Maven:
+
+```powershell
+$env:JWT_PRIVATE_KEY_PATH = (Resolve-Path .secrets/jwt-private.pem).Path
+$env:JWT_PUBLIC_KEY_PATH = (Resolve-Path .secrets/jwt-public.pem).Path
+$env:APP_SECURITY_ALLOWED_ORIGINS = "http://localhost:5173"
+$env:DB_PASSWORD = "your-postgres-password"
+.\mvnw.cmd spring-boot:run
+```
+
+Keep `.secrets/`, `.env` and PEM files out of Git. The CI workflow generates a temporary key pair for its test run; it never reuses a production key.
+
+### HTTP verification
+
+After starting the application, log in and copy the token:
+
+```bash
+curl -i -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"student","password":"Student-ChangeMe-2026!"}'
+```
+
+Check the authorization matrix (replace `$TOKEN` with the returned access token):
+
+```bash
+# Public read: 200
+curl -i http://localhost:8080/api/v1/characters
+
+# Anonymous delete: 401
+curl -i -X DELETE http://localhost:8080/api/v1/characters/<UUID>
+
+# Student delete: 403
+curl -i -X DELETE http://localhost:8080/api/v1/characters/<UUID> \
+  -H "Authorization: Bearer $TOKEN"
+
+# Admin delete: 204 (log in as admin to obtain the admin token)
+curl -i -X DELETE http://localhost:8080/api/v1/characters/<UUID> \
+  -H "Authorization: Bearer $ADMIN_TOKEN"
+```
+
+The security slice tests cover anonymous public reads, anonymous 401, student 403 and admin 204. For a local full-suite run, generate a temporary key pair and set the environment variables before Maven:
+
+```bash
+mkdir -p .secrets/test
+openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out .secrets/test/private.pem
+openssl pkey -in .secrets/test/private.pem -pubout -out .secrets/test/public.pem
+export JWT_PRIVATE_KEY_PATH="$(pwd)/.secrets/test/private.pem"
+export JWT_PUBLIC_KEY_PATH="$(pwd)/.secrets/test/public.pem"
+export DB_PASSWORD="your-postgres-password"
+export SPRING_PROFILES_ACTIVE=test
+./mvnw clean verify
+```
+
+The CI job provisions PostgreSQL and generates its own ephemeral RSA keys.

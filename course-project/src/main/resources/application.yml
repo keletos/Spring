@@ -47,8 +47,17 @@ integrations:
     read-timeout: 3s
 
 app:
+  security:
+    allowed-origins: ${APP_SECURITY_ALLOWED_ORIGINS:http://localhost:5173}
+    jwt:
+      issuer: ${JWT_ISSUER:cyberpunk-red-api}
+      access-token-ttl: ${JWT_ACCESS_TOKEN_TTL:900}
   messaging:
     kafka:
       enabled: true
     outbox:
       poll-interval: 1000
+
+rsa:
+  private-key: file:${JWT_PRIVATE_KEY_PATH}
+  public-key: file:${JWT_PUBLIC_KEY_PATH}

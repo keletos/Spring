@@ -30,6 +30,15 @@ spring:
         max-page-size: 100
 
 app:
+  security:
+    allowed-origins: http://localhost:5173
+    jwt:
+      issuer: cyberpunk-red-api-test
+      access-token-ttl: 900
   messaging:
     kafka:
       enabled: false
+
+rsa:
+  private-key: file:${JWT_PRIVATE_KEY_PATH}
+  public-key: file:${JWT_PUBLIC_KEY_PATH}

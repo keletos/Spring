@@ -36,9 +36,17 @@ jobs:
           java-version: "21"
           cache: maven
 
+      - name: Generate ephemeral RSA keys for tests
+        run: |
+          mkdir -p "$RUNNER_TEMP/jwt"
+          openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out "$RUNNER_TEMP/jwt/private.pem"
+          openssl pkey -in "$RUNNER_TEMP/jwt/private.pem" -pubout -out "$RUNNER_TEMP/jwt/public.pem"
+
       - name: Verify Maven project
         working-directory: course-project
         run: bash ./mvnw --batch-mode --no-transfer-progress clean verify
         env:
           DB_PASSWORD: postgres
           SPRING_PROFILES_ACTIVE: test
+          JWT_PRIVATE_KEY_PATH: ${{ runner.temp }}/jwt/private.pem
+          JWT_PUBLIC_KEY_PATH: ${{ runner.temp }}/jwt/public.pem

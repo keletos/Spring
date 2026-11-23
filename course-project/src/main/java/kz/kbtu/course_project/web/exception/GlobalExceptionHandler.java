@@ -10,6 +10,8 @@ import org.springframework.beans.TypeMismatchException;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -28,6 +30,22 @@ public class GlobalExceptionHandler {
 
     private static final Logger logger =
             LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ProblemDetail handleAuthenticationFailure(
+            AuthenticationException ex,
+            HttpServletRequest request) {
+        return createProblem(HttpStatus.UNAUTHORIZED, "Authentication Failed",
+                "Invalid username or password.", request);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ProblemDetail handleAccessDenied(
+            AccessDeniedException ex,
+            HttpServletRequest request) {
+        return createProblem(HttpStatus.FORBIDDEN, "Forbidden",
+                "You do not have permission to perform this action.", request);
+    }
 
     @ExceptionHandler(CharacterNotFoundException.class)
     public ProblemDetail handleCharacterNotFound(
