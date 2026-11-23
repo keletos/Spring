@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import kz.kbtu.course_project.app.model.PageResult;
 import kz.kbtu.course_project.app.model.PaginationQuery;
@@ -18,6 +19,7 @@ import kz.kbtu.course_project.web.dto.CreateCharacterRequest;
 import kz.kbtu.course_project.web.dto.UpdateCharacterRequest;
 import kz.kbtu.course_project.web.mapper.CharacterDtoMapper;
 
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -65,6 +67,7 @@ public class CharacterController {
             @ApiResponse(responseCode = "500", description = "An unexpected server error occurred.",
                     content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     })
+    @SecurityRequirement(name = "bearerAuth")
     @PostMapping
     public ResponseEntity<CharacterResponse> create(
             @Valid @RequestBody CreateCharacterRequest request,
@@ -124,7 +127,9 @@ public class CharacterController {
     })
     @GetMapping
     public PagedModel<CharacterResponse> getAll(
-            @PageableDefault(size = 20, sort = "name") Pageable pageable
+        @ParameterObject
+        @PageableDefault(size = 20, sort = "name")
+        Pageable pageable
     ) {
         PaginationQuery query = new PaginationQuery(
                 pageable.getPageNumber(),
@@ -176,6 +181,7 @@ public class CharacterController {
             @ApiResponse(responseCode = "500", description = "An unexpected server error occurred.",
                     content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     })
+    @SecurityRequirement(name = "bearerAuth")
     @PutMapping("/{id}")
     public ResponseEntity<CharacterResponse> update(
             @Parameter(description = "UUID of the character to update", required = true)
@@ -200,6 +206,7 @@ public class CharacterController {
             @ApiResponse(responseCode = "500", description = "An unexpected server error occurred.",
                     content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     })
+    @SecurityRequirement(name = "bearerAuth")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(
             @Parameter(description = "UUID of the character to delete", required = true)

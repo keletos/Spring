@@ -1,7 +1,10 @@
 package kz.kbtu.course_project.config;
 
+import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.security.SecurityScheme;
+
 import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,14 +22,20 @@ public class OpenApiConfig {
                                 REST API for managing Cyberpunk RED player characters
                                 and retrieving external compendium metadata.
                                 All endpoints return documented response schemas.
-                                """));
+                                """))
+                .components(new Components()
+                        .addSecuritySchemes("bearerAuth",
+                                new SecurityScheme()
+                                        .type(SecurityScheme.Type.HTTP)
+                                        .scheme("bearer")
+                                        .bearerFormat("JWT")));
     }
 
     @Bean
     public GroupedOpenApi apiV1() {
         return GroupedOpenApi.builder()
                 .group("api-v1")
-                .pathsToMatch("/api/v1/**", "/profile")
+                .pathsToMatch("/api/v1/**", "/api/auth/**", "/profile")
                 .build();
     }
 
